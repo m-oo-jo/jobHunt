@@ -1,49 +1,127 @@
-* {
-  box-sizing: border-box;
+:root {
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.5);
+  --text: #e6edf3;
+  --text-muted: #8b949e;
 }
 
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  color: #222;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .container {
-  width: 90%;
-  max-width: 900px;
-  margin: 50px auto;
+  max-width: 600px;
+  width: 100%;
+  padding: 1rem;
 }
 
 .job-card {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 0 30px rgba(0,0,0,0.4);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  animation: fadeIn 0.6s ease;
 }
 
-.job-card h1 {
-  margin-top: 0;
-}
-
-.job-card h2 {
-  margin-bottom: 5px;
-}
-
-.job-card p {
-  line-height: 1.6;
+.job-card:hover {
+  box-shadow: 0 0 40px var(--accent-glow);
+  transform: translateY(-4px);
 }
 
 .apply-btn {
   display: inline-block;
-  margin-top: 20px;
-  padding: 12px 24px;
-  background: #2563eb;
+  background: var(--accent);
   color: white;
+  border: none;
+  padding: 0.7rem 1.8rem;
+  border-radius: 8px;
+  font-weight: 600;
   text-decoration: none;
-  border-radius: 6px;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .apply-btn:hover {
-  background: #1d4ed8;
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: scale(1.05);
+  color: white;
+}
+
+.btn-glow {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: scale(1.05);
+  color: white;
+}
+
+.form-control {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: var(--text);
+}
+
+.form-control:focus {
+  background: #0d1117;
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem var(--accent-glow);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+input, select, textarea {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+input:focus, select:focus, textarea:focus {
+  background: #0d1117;
+  color: var(--text);
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 0.2rem var(--accent-glow);
+}
+
+button[type="submit"] {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+button[type="submit"]:hover {
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: scale(1.05);
+}
+.success-content {
+  text-align: center;
+  animation: fadeIn 0.6s ease;
 }
