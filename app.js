@@ -19,6 +19,11 @@ app.get("/", (req, res) => {
 app.get("/apply", (req, res) => {
   res.render("apply");
 });
+
+app.get("/jobs", (req, res) => {
+    res.render("jobs");
+});
+
 app.post("/apply", (req, res) => {
   //name validation
   const name = req.body.fullName;
