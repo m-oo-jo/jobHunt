@@ -280,7 +280,7 @@ button[type="submit"]:hover {
    Main page layout
    ========================= */
 
-body > .form-box {
+.home-page {
     flex: 1;
     display: flex;
     align-items: center;

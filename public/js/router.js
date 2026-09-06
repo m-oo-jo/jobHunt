@@ -1,6 +1,3 @@
-const appContent = document.getElementById("app-content");
-
-
 document.addEventListener("click", async function (event) {
   const link = event.target.closest("a");
 
@@ -23,6 +20,7 @@ document.addEventListener("click", async function (event) {
   await loadPage(url, true);
 });
 
+
 async function loadPage(url, addToHistory) {
   try {
     const response = await fetch(url);
@@ -44,15 +42,14 @@ async function loadPage(url, addToHistory) {
       return;
     }
 
-    appContent.innerHTML = newContent.innerHTML;
-
-    if (url.includes("/apply")) {
-      initApplyValidation();
-    }
+    document.getElementById("app-content").replaceWith(newContent);
 
     if (addToHistory) {
       history.pushState({}, "", url);
     }
+
+    initializePage(url);
+
   } catch (error) {
     console.error("Routing error:", error);
 
@@ -60,10 +57,28 @@ async function loadPage(url, addToHistory) {
   }
 }
 
+
+function initializePage(url) {
+
+  if (url.includes("/apply")) {
+    initApplyValidation();
+  }
+
+  if (url.includes("/jobs")) {
+    initJobs();
+  }
+
+  if (url.includes("/recruiter")) {
+    initRecruiter();
+    initRecruiterDashboard();
+  }
+
+}
+
+
 window.addEventListener("popstate", function () {
   loadPage(window.location.href, false);
 });
 
-if (document.querySelector("form")) {
-  initApplyValidation();
-}
+
+initializePage(window.location.href);

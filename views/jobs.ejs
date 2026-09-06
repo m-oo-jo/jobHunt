@@ -37,7 +37,7 @@
             <!-- Filters -->
             <div class="col-12 col-lg-3">
 
-                <div class="job-card">
+                <div class="filter-card">
 
                     <h4 class="mb-4">Filters</h4>
 
@@ -87,9 +87,10 @@
                         <select id="location" class="form-select">
 
                             <option>All Locations</option>
-                            <option>Remote</option>
+                            <option>Kochi</option>
                             <option>Bangalore</option>
                             <option>Hyderabad</option>
+                            <option>Delhi</option>
 
                         </select>
 
@@ -181,7 +182,7 @@
                         </p>
                     </div>
 
-                    <select class="form-select w-auto">
+                    <select id="sort" class="form-select w-auto">
 
                         <option>Sort by: Newest</option>
                         <option>Sort by: Oldest</option>
@@ -191,112 +192,16 @@
                 </div>
 
 
-                <!-- Job 1 -->
-                <div class="job-list-card mb-3">
-
-                    <div>
-
-                        <h4>Software Engineer</h4>
-
-                        <p class="job-company">
-                            TechNova Solutions
-                        </p>
-
-                        <small>
-                            📍 Remote &nbsp; • &nbsp; Full Time
-                        </small>
-
-                    </div>
-
-                    <a
-                        href="/jobs/software-engineer"
-                        class="apply-btn"
-                    >
-                        View Job
-                    </a>
-
-                </div>
+                
 
 
-                <!-- Job 2 -->
-                <div class="job-list-card mb-3">
+                
+               <div id="jobsContainer"></div>
 
-                    <div>
-
-                        <h4>Frontend Developer</h4>
-
-                        <p class="job-company">
-                            PixelCraft Labs
-                        </p>
-
-                        <small>
-                            📍 Bangalore &nbsp; • &nbsp; Full Time
-                        </small>
-
-                    </div>
-
-                    <a
-                        href="/jobs/frontend-developer"
-                        class="apply-btn"
-                    >
-                        View Job
-                    </a>
-
-                </div>
+                
 
 
-                <!-- Job 3 -->
-                <div class="job-list-card mb-3">
-
-                    <div>
-
-                        <h4>UI/UX Designer</h4>
-
-                        <p class="job-company">
-                            Designify
-                        </p>
-
-                        <small>
-                            📍 Hyderabad &nbsp; • &nbsp; Full Time
-                        </small>
-
-                    </div>
-
-                    <a
-                        href="/jobs/ui-ux-designer"
-                        class="apply-btn"
-                    >
-                        View Job
-                    </a>
-
-                </div>
-
-
-                <!-- Job 4 -->
-                <div class="job-list-card mb-3">
-
-                    <div>
-
-                        <h4>Backend Developer</h4>
-
-                        <p class="job-company">
-                            DataCrunch
-                        </p>
-
-                        <small>
-                            📍 Remote &nbsp; • &nbsp; Full Time
-                        </small>
-
-                    </div>
-
-                    <a
-                        href="/jobs/backend-developer"
-                        class="apply-btn"
-                    >
-                        View Job
-                    </a>
-
-                </div>
+                
 
             </div>
 
@@ -313,6 +218,8 @@
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
     </script>
+
+    <script src="/js/jobs.js"></script>
 
 </body>
 
