@@ -1,132 +1,45 @@
+require("dotenv").config();
+
 const express = require("express");
+const connectDB = require("./config/db");
+const bcrypt = require("bcryptjs");
+const User = require("./models/User");
+const Job = require("./models/Job");
+const Application = require("./models/Application");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+
+const authMiddleware = require("./middleware/authMiddleware");
+const recruiterMiddleware = require("./middleware/recruiterMiddleware");
 
 const app = express();
 
-const applications = [];
 
-const jobs = [
-    {
-        id: 1,
-        title: "Software Engineer",
-        company: "TechNova Solutions",
-        location: "Kochi",
-        type: "Full Time",
-        category: "Development",
-        description:
-            "We are looking for a motivated software engineer to join our development team.",
-        responsibilities: [
-            "Develop and maintain web applications",
-            "Work with the development team",
-            "Write clean and maintainable code",
-        ],
-        requirements: [
-            "Knowledge of JavaScript",
-            "Understanding of web development",
-            "Good problem-solving skills",
-        ],
-        experience: "0–2 years",
-    },
+// ====================
+// Database Connection
+// ====================
 
-    {
-        id: 2,
-        title: "Frontend Developer",
-        company: "PixelCraft Labs",
-        location: "Bangalore",
-        type: "Part Time",
-        category: "Development",
-        description:
-            "We are looking for a creative frontend developer to build responsive and user-friendly web interfaces.",
-        responsibilities: [
-            "Build responsive web pages",
-            "Work with designers and developers",
-            "Improve website performance",
-        ],
-        requirements: [
-            "Knowledge of HTML, CSS and JavaScript",
-            "Understanding of responsive design",
-            "Basic knowledge of React",
-        ],
-        experience: "0–2 years",
-    },
+connectDB();
 
-    {
-        id: 3,
-        title: "UI/UX Designer",
-        company: "Google",
-        location: "Chennai",
-        type: "Full Time",
-        category: "Design",
-        description:
-            "We are looking for a UI/UX designer to create simple, attractive and user-friendly digital experiences.",
-        responsibilities: [
-            "Design user interfaces",
-            "Create wireframes and prototypes",
-            "Work with the development team",
-        ],
-        requirements: [
-            "Knowledge of UI/UX principles",
-            "Experience with design tools",
-            "Good understanding of user experience",
-        ],
-        experience: "1–3 years",
-    },
 
-    {
-        id: 4,
-        title: "Backend Developer",
-        company: "DataCrunch",
-        location: "Delhi",
-        type: "Remote",
-        category: "Development",
-        description:
-            "We are looking for a backend developer to build reliable server-side applications and APIs.",
-        responsibilities: [
-            "Develop REST APIs",
-            "Work with databases",
-            "Maintain server-side applications",
-        ],
-        requirements: [
-            "Knowledge of Node.js",
-            "Understanding of REST APIs",
-            "Knowledge of databases",
-        ],
-        experience: "1–3 years",
-    },
 
-    {
-        id: 5,
-        title: "DevOps Engineer",
-        company: "Deloitte Tech",
-        location: "Kochi",
-        type: "Full Time",
-        category: "Operations",
-        description:
-            "We are looking for a DevOps engineer to help automate development, deployment and infrastructure processes.",
-        responsibilities: [
-            "Manage deployment pipelines",
-            "Work with containers and cloud infrastructure",
-            "Monitor application systems",
-        ],
-        requirements: [
-            "Knowledge of Linux",
-            "Understanding of Docker",
-            "Basic knowledge of CI/CD",
-        ],
-        experience: "1–3 years",
-    },
-];
-
+// ====================
 // Middleware
+// ====================
+
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.set("view engine", "ejs");
+
 
 // ====================
 // Page Routes
 // ====================
 
+// Home
 app.get("/", (req, res) => {
     res.render("index", {
         jobTitle: "Software Engineer",
@@ -137,130 +50,318 @@ app.get("/", (req, res) => {
     });
 });
 
+
+// Apply Page
 app.get("/apply", (req, res) => {
     res.render("apply");
 });
 
-app.get("/jobs", (req, res) => {
-    res.render("jobs");
+
+// Register Page
+app.get("/register", (req, res) => {
+    res.render("register");
 });
 
-app.get("/jobs/:id", (req, res) => {
-    const jobId = Number(req.params.id);
 
-    const job = jobs.find((job) => job.id === jobId);
+// Register User
+app.post("/register", async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
 
-    if (!job) {
-        return res.status(404).send("Job not found");
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role,
+        });
+
+        await newUser.save();
+
+        res.send("Registration successful!");
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).send("Registration failed");
     }
-
-    res.render("job-details", {
-        job: job,
-    });
 });
 
-app.get("/recruiter", (req, res) => {
-    res.render("recruiter-dashboard");
+
+// Login Page
+app.get("/login", (req, res) => {
+    res.render("login");
+});
+// Log out
+app.get("/logout", (req, res) => {
+    res.clearCookie("token");
+    res.redirect("/login");
 });
 
-app.get("/recruiter/post", (req, res) => {
-    res.render("recruiter");
+
+// Login User
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(401).send("Invalid email or password");
+        }
+
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).send("Invalid email or password");
+        }
+
+        const token = jwt.sign(
+            {
+                userId: user._id,
+                role: user.role,
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h",
+            }
+        );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            maxAge: 60 * 60 * 1000,
+        });
+
+        res.send("Login successful!");
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).send("Login failed");
+    }
 });
+
+
 
 // ====================
-// REST API Routes
+// Job API Routes
 // ====================
+
 
 // GET all jobs
-app.get("/api/jobs", (req, res) => {
-    res.json(jobs);
+app.get("/api/jobs", async (req, res) => {
+    try {
+        const jobs = await Job.find();
+
+        res.json(jobs);
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to fetch jobs",
+        });
+    }
 });
+
 
 // GET one job
-app.get("/api/jobs/:id", (req, res) => {
-    const jobId = Number(req.params.id);
+app.get("/api/jobs/:id", async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
 
-    const job = jobs.find((job) => job.id === jobId);
+        const job = await Job.findOne({ id: id });
 
-    if (!job) {
-        return res.status(404).json({
-            message: "Job not found",
+        if (!job) {
+            return res.status(404).json({
+                message: "Job not found",
+            });
+        }
+
+        res.json(job);
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to fetch job",
         });
     }
-
-    res.json(job);
 });
+
 
 // POST new job
-app.post("/api/jobs", (req, res) => {
-    const newJob = {
-        id: jobs.length? Math.max(...jobs.map((job) => job.id)) + 1: 1,
-        title: req.body.title,
-        company: req.body.company,
-        location: req.body.location,
-        type: req.body.type,
-        category: req.body.category,
-        description: req.body.description,
-        responsibilities: req.body.responsibilities,
-        requirements: req.body.requirements,
-        experience: req.body.experience,
-    };
+// Recruiter only
+app.post(
+    "/api/jobs",
+    authMiddleware,
+    recruiterMiddleware,
+    async (req, res) => {
+        try {
 
-    jobs.push(newJob);
+            // Find highest existing job ID
+            const lastJob = await Job.findOne().sort({ id: -1 });
 
-    res.status(201).json(newJob);
-});
+            const nextId = lastJob
+                ? lastJob.id + 1
+                : 1;
+
+
+            // Create new job
+            const newJob = new Job({
+                id: nextId,
+                title: req.body.title,
+                company: req.body.company,
+                location: req.body.location,
+                type: req.body.type,
+                category: req.body.category,
+                description: req.body.description,
+                responsibilities: req.body.responsibilities,
+                requirements: req.body.requirements,
+                experience: req.body.experience,
+            });
+
+
+            // Save to MongoDB
+            await newJob.save();
+
+
+            res.status(201).json(newJob);
+
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                message: "Failed to create job",
+            });
+        }
+    }
+);
+
 
 // PUT update job
-app.put("/api/jobs/:id", (req, res) => {
-    const jobId = Number(req.params.id);
+// Recruiter only
+app.put(
+    "/api/jobs/:id",
+    authMiddleware,
+    recruiterMiddleware,
+    async (req, res) => {
+        try {
 
-    const job = jobs.find((job) => job.id === jobId);
+            const jobId = Number(req.params.id);
 
-    if (!job) {
-        return res.status(404).json({
-            message: "Job not found",
-        });
+            const updatedJob = await Job.findOneAndUpdate(
+                { id: jobId },
+                {
+                    title: req.body.title,
+                    company: req.body.company,
+                    location: req.body.location,
+                    type: req.body.type,
+                    category: req.body.category,
+                    description: req.body.description,
+                    responsibilities: req.body.responsibilities,
+                    requirements: req.body.requirements,
+                    experience: req.body.experience,
+                },
+                {
+                    new: true,
+                    runValidators: true,
+                }
+            );
+
+
+            if (!updatedJob) {
+                return res.status(404).json({
+                    message: "Job not found",
+                });
+            }
+
+
+            res.json(updatedJob);
+
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                message: "Failed to update job",
+            });
+        }
     }
+);
 
-    job.title = req.body.title;
-    job.company = req.body.company;
-    job.location = req.body.location;
-    job.type = req.body.type;
-    job.category = req.body.category;
-    job.description = req.body.description;
-    job.responsibilities = req.body.responsibilities;
-    job.requirements = req.body.requirements;
-    job.experience = req.body.experience;
-
-    res.json(job);
-});
 
 // DELETE job
-app.delete("/api/jobs/:id", (req, res) => {
-    const jobId = Number(req.params.id);
+// Recruiter only
+app.delete(
+    "/api/jobs/:id",
+    authMiddleware,
+    recruiterMiddleware,
+    async (req, res) => {
+        try {
 
-    const jobIndex = jobs.findIndex((job) => job.id === jobId);
+            const jobId = Number(req.params.id);
 
-    if (jobIndex === -1) {
-        return res.status(404).json({
-            message: "Job not found",
-        });
+            const deletedJob = await Job.findOneAndDelete({
+                id: jobId,
+            });
+
+
+            if (!deletedJob) {
+                return res.status(404).json({
+                    message: "Job not found",
+                });
+            }
+
+
+            res.json({
+                message: "Job deleted successfully",
+                job: deletedJob,
+            });
+
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                message: "Failed to delete job",
+            });
+        }
     }
+);
 
-    const deletedJob = jobs.splice(jobIndex, 1);
 
-    res.json({
-        message: "Job deleted successfully",
-        job: deletedJob[0],
-    });
-});
+// ====================
+// Recruiter Pages
+// ====================
+
+app.get(
+    "/recruiter",
+    authMiddleware,
+    recruiterMiddleware,
+    (req, res) => {
+        res.render("recruiter-dashboard");
+    }
+);
+
+app.get(
+    "/recruiter/post",
+    authMiddleware,
+    recruiterMiddleware,
+    (req, res) => {
+        res.render("recruiter");
+    }
+);
 
 // ====================
 // Application Route
 // ====================
 
-app.post("/apply", (req, res) => {
+app.post("/apply", async (req, res) => {
 
     // Name validation
     const name = req.body.fullName;
@@ -269,21 +370,27 @@ app.post("/apply", (req, res) => {
         return res.send("Please enter your full name.");
     }
 
+
     // Email validation
     const email = req.body.email;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
         return res.send("Please enter a valid email address.");
     }
 
+
     // Phone validation
     const phone = req.body.phone;
+
     const phonePattern = /^\d{10}$/;
 
     if (!phonePattern.test(phone)) {
         return res.send("Please enter a valid 10-digit phone number.");
     }
+
 
     // Experience validation
     const experience = req.body.experience;
@@ -292,16 +399,19 @@ app.post("/apply", (req, res) => {
         return res.send("Please select your experience.");
     }
 
+
     // Portfolio validation
     const portfolio = req.body.portfolio;
 
     if (portfolio) {
         try {
             new URL(portfolio);
+
         } catch {
             return res.send("Please enter a valid portfolio URL.");
         }
     }
+
 
     // Create application object
     const application = {
@@ -313,10 +423,14 @@ app.post("/apply", (req, res) => {
         message: req.body.message,
     };
 
-    // Store application
-    applications.push(application);
 
-    console.log("New application received:", application);
+    await Application.create(application);
+
+    console.log(
+        "New application received:",
+        application
+    );
+
 
     // Show success page
     res.render("success", {
@@ -324,7 +438,11 @@ app.post("/apply", (req, res) => {
     });
 });
 
-// Start server
+
+// ====================
+// Start Server
+// ====================
+
 app.listen(5000, () => {
     console.log("server is running on port 5000");
 });
