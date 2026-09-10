@@ -1,36 +1,48 @@
+// Load environment variables
+
 require("dotenv").config();
 
 const express = require("express");
+
 const connectDB = require("./config/db");
+
 const bcrypt = require("bcryptjs");
+
 const User = require("./models/User");
+
 const Job = require("./models/Job");
+
 const Application = require("./models/Application");
+
 const cookieParser = require("cookie-parser");
+
 const jwt = require("jsonwebtoken");
 
 const authMiddleware = require("./middleware/authMiddleware");
+
 const recruiterMiddleware = require("./middleware/recruiterMiddleware");
 
-const sendApplicationEmail = require("./services/emailService");
-
-// Import express-rate-limit to protect APIs from excessive requests
 const rateLimit = require("express-rate-limit");
 
+const redis = require("./config/redis");
+
+const emailQueue = require("./queues/emailQueue");
+
 const app = express();
+// ====================
+// Rate Limiting
+// ====================
 
 // Limit repeated application requests to protect the API from abuse
 const applicationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15-minute time window
-  limit: 10, // Allow a maximum of 10 application requests per IP
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
   message: {
     message: "Too many application attempts. Please try again later.",
   },
 });
 
-// Database Connection
-
-
+// Connect to MongoDB
 connectDB();
 
 // ====================
@@ -41,6 +53,12 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Log incoming requests for server monitoring
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
 // Make login status available to EJS pages
 app.use((req, res, next) => {
@@ -63,10 +81,9 @@ app.use((req, res, next) => {
 app.set("view engine", "ejs");
 
 // ====================
-// Page Routes
+// Public Page Routes
 // ====================
 
-// Home
 app.get("/", (req, res) => {
   res.render("index", {
     jobTitle: "Software Engineer",
@@ -77,17 +94,26 @@ app.get("/", (req, res) => {
   });
 });
 
-// Apply Page
+app.get("/about", (req, res) => {
+  res.render("about");
+});
+
+app.get("/contact", (req, res) => {
+  res.render("contact");
+});
+
 app.get("/apply", (req, res) => {
   res.render("apply");
 });
 
-// Register Page
+// ====================
+// Authentication Routes
+// ====================
+
 app.get("/register", (req, res) => {
   res.render("register");
 });
 
-// Register User
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -103,25 +129,17 @@ app.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    res.send("Registration successful!");
+    res.redirect("/login?registered=true");
   } catch (error) {
     console.error(error);
-
     res.status(500).send("Registration failed");
   }
 });
 
-// Login Page
 app.get("/login", (req, res) => {
   res.render("login");
 });
-// Log out
-app.get("/logout", (req, res) => {
-  res.clearCookie("token");
-  res.redirect("/");
-});
 
-// Login User
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -163,17 +181,23 @@ app.post("/login", async (req, res) => {
     return res.redirect("/");
   } catch (error) {
     console.error(error);
-
     res.status(500).send("Login failed");
   }
 });
 
-// Jobs Page
+app.get("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.redirect("/");
+});
+
+// ====================
+// Job Page Routes
+// ====================
+
 app.get("/jobs", (req, res) => {
   res.render("jobs");
 });
 
-// Job Details Page
 app.get("/jobs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -190,14 +214,25 @@ app.get("/jobs/:id", async (req, res) => {
     res.status(500).send("Failed to load job");
   }
 });
+
 // ====================
 // Job API Routes
 // ====================
 
-// GET all jobs
 app.get("/api/jobs", async (req, res) => {
   try {
+    const cachedJobs = await redis.get("jobs:all");
+
+    if (cachedJobs) {
+      console.log("Jobs loaded from Redis cache");
+      return res.json(JSON.parse(cachedJobs));
+    }
+
     const jobs = await Job.find();
+
+    console.log("Jobs loaded from MongoDB");
+
+    await redis.set("jobs:all", JSON.stringify(jobs), "EX", 60);
 
     res.json(jobs);
   } catch (error) {
@@ -209,7 +244,6 @@ app.get("/api/jobs", async (req, res) => {
   }
 });
 
-// GET jobs posted by the logged-in recruiter
 app.get(
   "/api/recruiter/jobs",
   authMiddleware,
@@ -237,15 +271,12 @@ app.get(
   recruiterMiddleware,
   async (req, res) => {
     try {
-      // Find jobs posted by the logged-in recruiter
       const jobs = await Job.find({
         recruiter: req.user.userId,
       }).select("_id");
 
-      // Get only the IDs of those jobs
       const jobIds = jobs.map((job) => job._id);
 
-      // Find applications submitted for those jobs
       const applications = await Application.find({
         job: { $in: jobIds },
       })
@@ -263,7 +294,6 @@ app.get(
   },
 );
 
-// GET one job
 app.get("/api/jobs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -286,16 +316,15 @@ app.get("/api/jobs/:id", async (req, res) => {
   }
 });
 
-// POST new job
-// Recruiter only
+// ====================
+// Recruiter Job API
+// ====================
+
 app.post("/api/jobs", authMiddleware, recruiterMiddleware, async (req, res) => {
   try {
-    // Find highest existing job ID
     const lastJob = await Job.findOne().sort({ id: -1 });
-
     const nextId = lastJob ? lastJob.id + 1 : 1;
 
-    // Create new job
     const newJob = new Job({
       id: nextId,
       title: req.body.title,
@@ -310,8 +339,10 @@ app.post("/api/jobs", authMiddleware, recruiterMiddleware, async (req, res) => {
       recruiter: req.user.userId,
     });
 
-    // Save to MongoDB
     await newJob.save();
+
+    // Clear cached jobs after creating a new job
+    await redis.del("jobs:all");
 
     res.status(201).json(newJob);
   } catch (error) {
@@ -323,8 +354,6 @@ app.post("/api/jobs", authMiddleware, recruiterMiddleware, async (req, res) => {
   }
 });
 
-// PUT update job
-// Recruiter only
 app.put(
   "/api/jobs/:id",
   authMiddleware,
@@ -334,7 +363,10 @@ app.put(
       const jobId = Number(req.params.id);
 
       const updatedJob = await Job.findOneAndUpdate(
-        { id: jobId, recruiter: req.user.userId },
+        {
+          id: jobId,
+          recruiter: req.user.userId,
+        },
         {
           title: req.body.title,
           company: req.body.company,
@@ -358,6 +390,9 @@ app.put(
         });
       }
 
+      // Clear cached jobs after updating a job
+      await redis.del("jobs:all");
+
       res.json(updatedJob);
     } catch (error) {
       console.error(error);
@@ -369,8 +404,6 @@ app.put(
   },
 );
 
-// DELETE job
-// Recruiter only
 app.delete(
   "/api/jobs/:id",
   authMiddleware,
@@ -389,6 +422,9 @@ app.delete(
           message: "Job not found",
         });
       }
+
+      // Clear cached jobs after deleting a job
+      await redis.del("jobs:all");
 
       res.json({
         message: "Job deleted successfully",
@@ -412,14 +448,9 @@ app.get("/recruiter", authMiddleware, recruiterMiddleware, (req, res) => {
   res.render("recruiter-dashboard");
 });
 
-app.get(
-  "/recruiter/jobs",
-  authMiddleware,
-  recruiterMiddleware,
-  (req, res) => {
-    res.render("recruiter-jobs");
-  }
-);
+app.get("/recruiter/jobs", authMiddleware, recruiterMiddleware, (req, res) => {
+  res.render("recruiter-jobs");
+});
 
 app.get("/recruiter/post", authMiddleware, recruiterMiddleware, (req, res) => {
   res.render("recruiter-post");
@@ -430,85 +461,82 @@ app.get("/recruiter/post", authMiddleware, recruiterMiddleware, (req, res) => {
 // ====================
 
 app.post("/apply", applicationLimiter, async (req, res) => {
-  // Get the Job ID from the submitted application
-  const jobId = req.body.jobId;
+  try {
+    const jobId = req.body.jobId;
 
-  // Name validation
-  const name = req.body.fullName;
+    const name = req.body.fullName;
 
-  if (!name || name.trim() === "") {
-    return res.send("Please enter your full name.");
-  }
-
-  // Email validation
-  const email = req.body.email;
-
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailPattern.test(email)) {
-    return res.send("Please enter a valid email address.");
-  }
-
-  // Phone validation
-  const phone = req.body.phone;
-
-  const phonePattern = /^\d{10}$/;
-
-  if (!phonePattern.test(phone)) {
-    return res.send("Please enter a valid 10-digit phone number.");
-  }
-
-  // Experience validation
-  const experience = req.body.experience;
-
-  if (!experience || experience.trim() === "") {
-    return res.send("Please select your experience.");
-  }
-
-  // Portfolio validation
-  const portfolio = req.body.portfolio;
-
-  if (portfolio) {
-    try {
-      new URL(portfolio);
-    } catch {
-      return res.send("Please enter a valid portfolio URL.");
+    if (!name || name.trim() === "") {
+      return res.send("Please enter your full name.");
     }
+
+    const email = req.body.email;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      return res.send("Please enter a valid email address.");
+    }
+
+    const phone = req.body.phone;
+    const phonePattern = /^\d{10}$/;
+
+    if (!phonePattern.test(phone)) {
+      return res.send("Please enter a valid 10-digit phone number.");
+    }
+
+    const experience = req.body.experience;
+
+    if (!experience || experience.trim() === "") {
+      return res.send("Please select your experience.");
+    }
+
+    const portfolio = req.body.portfolio;
+
+    if (portfolio) {
+      try {
+        new URL(portfolio);
+      } catch {
+        return res.send("Please enter a valid portfolio URL.");
+      }
+    }
+
+    const job = await Job.findOne({
+      _id: jobId,
+    }).populate("recruiter");
+
+    if (!job) {
+      return res.send("Job not found.");
+    }
+
+    const application = {
+      job: jobId,
+      name,
+      email,
+      phone,
+      experience,
+      portfolio,
+      message: req.body.message,
+    };
+
+    const savedApplication = await Application.create(application);
+
+    console.log("New application received:", savedApplication);
+
+    // Add the email notification to the background queue
+    await emailQueue.add("application-email", {
+      applicationId: savedApplication._id.toString(),
+      jobId: job._id.toString(),
+    });
+
+    console.log("Email job added to queue");
+
+    res.render("success", {
+      name,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to submit application.");
   }
-
-  // Find the job and recruiter
-const job = await Job.findOne({ _id: jobId }).populate("recruiter");
-
-if (!job) {
-  return res.send("Job not found.");
-}
-
-  // Create application object
-  const application = {
-    job: jobId,
-    name: name,
-    email: email,
-    phone: phone,
-    experience: experience,
-    portfolio: portfolio,
-    message: req.body.message,
-  };
-
-  const savedApplication = await Application.create(application);
-
-console.log("New application received:", savedApplication);
-
-// Send email notification to the recruiter
-const emailSent = await sendApplicationEmail(savedApplication, job);
-
-if (!emailSent) {
-  console.log("Application saved, but email notification failed.");
-}
-
-  // Show success page
-  res.render("success", {
-    name: name,
-  });
 });
 
 // ====================
