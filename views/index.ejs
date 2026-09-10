@@ -1,11 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>JobHunt</title>
+    <title>JobHunt - Find Your Dream Job</title>
 
     <!-- Bootstrap -->
     <link
@@ -15,41 +17,284 @@
 
     <!-- Google Font -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     >
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/style.css">
+
 </head>
 
 <body>
-<%- include("partials/header") %>
-    <main id="app-content" class="home-page py-5">
 
-        <div class="row justify-content-center">
+    <%- include("partials/header") %>
 
-            <div class="col-12 col-md-10 col-lg-8">
 
-                <div class="job-card">
+    <!-- Hero Section -->
 
-                    <h2><%= jobTitle %></h2>
+    <main id="app-content">
 
-                    <h3><%= company %></h3>
+        <section class="home-hero">
 
-                    <p>
-                        <strong>Location:</strong>
-                        <%= location %>
-                    </p>
+            <div class="container">
 
-                    <p>
-                        <%= description %>
-                    </p>
+                <div class="row align-items-center g-5">
 
-                    <div class="text-center mt-4">
+                    <!-- Hero Content -->
 
-                        <a href="/apply" class="apply-btn">
-                            Apply Now
+                    <div class="col-lg-6">
+
+                        <span class="hero-badge">
+                            Find Your Dream Job
+                        </span>
+
+                        <h1 class="hero-title mt-3">
+
+                            Discover Opportunities
+                            <br>
+
+                            Build Your <span>Future</span>
+
+                        </h1>
+
+                        <p class="hero-text">
+
+                            Find the right job, grow your career,
+                            and take the next step toward success.
+
+                        </p>
+
+                        <a href="/jobs" class="apply-btn hero-btn">
+
+                            Browse Jobs
+                            <span>→</span>
+
+                        </a>
+
+                    </div>
+
+
+                    <!-- Hero Illustration -->
+
+                    <div class="col-lg-6">
+
+                        <div class="hero-illustration">
+
+                            <div class="illustration-screen">
+
+                                <div class="illustration-header">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+
+                                <div class="illustration-content">
+
+                                    <div class="illustration-person"></div>
+
+                                    <div class="illustration-card">
+
+                                        <div class="illustration-icon">
+                                            ✓
+                                        </div>
+
+                                        <div class="illustration-lines">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="illustration-card small">
+
+                                        <div class="illustration-lines">
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Statistics -->
+
+                <div class="row g-4 home-stats mt-5">
+
+                    <div class="col-md-4">
+
+                        <div class="stat-card">
+
+                            <div class="stat-icon">
+                                💼
+                            </div>
+
+                            <div>
+                                <h3>500+</h3>
+                                <p>Active Jobs</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <div class="stat-card">
+
+                            <div class="stat-icon">
+                                🏢
+                            </div>
+
+                            <div>
+                                <h3>200+</h3>
+                                <p>Companies</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <div class="stat-card">
+
+                            <div class="stat-icon">
+                                👥
+                            </div>
+
+                            <div>
+                                <h3>1000+</h3>
+                                <p>Placed Candidates</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Popular Categories -->
+
+        <section class="categories-section">
+
+            <div class="container">
+
+                <div class="section-heading">
+
+                    <h2>Popular Categories</h2>
+
+                    <a href="/jobs">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="row g-3">
+
+                    <div class="col-6 col-md">
+
+                        <a href="/jobs?category=Development"
+                           class="category-card">
+
+                            <div class="category-icon">
+                                💻
+                            </div>
+
+                            <h5>Development</h5>
+
+                            <p>120 Jobs</p>
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="col-6 col-md">
+
+                        <a href="/jobs?category=Design"
+                           class="category-card">
+
+                            <div class="category-icon">
+                                🎨
+                            </div>
+
+                            <h5>Design</h5>
+
+                            <p>80 Jobs</p>
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="col-6 col-md">
+
+                        <a href="/jobs?category=Marketing"
+                           class="category-card">
+
+                            <div class="category-icon">
+                                📈
+                            </div>
+
+                            <h5>Marketing</h5>
+
+                            <p>60 Jobs</p>
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="col-6 col-md">
+
+                        <a href="/jobs?category=Business"
+                           class="category-card">
+
+                            <div class="category-icon">
+                                💼
+                            </div>
+
+                            <h5>Business</h5>
+
+                            <p>90 Jobs</p>
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="col-12 col-md">
+
+                        <a href="/jobs"
+                           class="category-card">
+
+                            <div class="category-icon">
+                                +
+                            </div>
+
+                            <h5>More</h5>
+
+                            <p>See All</p>
+
                         </a>
 
                     </div>
@@ -58,10 +303,13 @@
 
             </div>
 
-        </div>
+        </section>
 
     </main>
-<%- include("partials/footer") %>
+
+
+    <%- include("partials/footer") %>
+
 </body>
 
 </html>

@@ -106,7 +106,7 @@ function initRecruiterDashboard() {
 
   if (!recruiterJobs) return;
 
-  fetch("/api/jobs")
+  fetch("/api/recruiter/jobs")
     .then((response) => {
       if (!response.ok) {
         throw new Error("Failed to fetch jobs");

@@ -2,8 +2,13 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Recruiter Dashboard - JobHunt</title>
 
@@ -18,66 +23,120 @@
     >
 
     <link rel="stylesheet" href="/css/style.css">
+
 </head>
 
 <body>
 
-    <%- include("partials/header") %>
+    <%- include("partials/recruiter-header") %>
 
     <main id="app-content" class="container py-5">
 
+        <!-- Dashboard Header -->
+        <div class="job-card mb-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+                    <h1 class="mb-2">Recruiter Dashboard</h1>
+
+                    <p class="mb-0">
+                        Manage your job postings and applications.
+                    </p>
+                </div>
+
+                <a
+                    href="/recruiter/post"
+                    class="apply-btn"
+                >
+                    + Post Job
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- Dashboard Statistics -->
+        <div class="row g-4 mb-5">
+
+            <div class="col-md-4">
+
+                <div class="job-card h-100">
+
+                    <h2
+                        id="jobsCount"
+                        class="mb-2"
+                    >
+                        0
+                    </h2>
+
+                    <p class="mb-0">
+                        Jobs Posted
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="job-card h-100">
+
+                    <h2
+                        id="applicantsCount"
+                        class="mb-2"
+                    >
+                        0
+                    </h2>
+
+                    <p class="mb-0">
+                        Applicants
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="job-card h-100">
+
+                    <h2
+                        id="activeJobsCount"
+                        class="mb-2"
+                    >
+                        0
+                    </h2>
+
+                    <p class="mb-0">
+                        Active Jobs
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Job Postings -->
         <div class="job-card">
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="mb-4">
 
-                <div>
-                    <h1>Recruiter Dashboard</h1>
-                    <p>Manage your job postings and applications.</p>
-                </div>
+                <h2 class="mb-2">
+                    Your Job Postings
+                </h2>
 
-                <a href="/recruiter/post" class="apply-btn">
-                    + Post Job
-                </a>
-
-            </div>
-
-            <div class="row g-3 mb-5">
-
-                <div class="col-md-4">
-                    <div class="job-card">
-                        <h2 id="jobsCount">0</h2>
-                        <p>Jobs Posted</p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="job-card">
-                        <h2 id="applicantsCount">0</h2>
-                        <p>Applicants</p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="job-card">
-                        <h2 id="activeJobsCount">0</h2>
-                        <p>Active Jobs</p>
-                    </div>
-                </div>
+                <p class="mb-0">
+                    View and manage the jobs you have posted.
+                </p>
 
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-
-                <div>
-                    <h2>Your Job Postings</h2>
-                    <p>Manage the jobs you have posted.</p>
-                </div>
-
-                <a href="/recruiter/post" class="apply-btn">
-                    + Post Job
-                </a>
-
-            </div>
 
             <div id="recruiterJobs">
 
@@ -88,6 +147,7 @@
         </div>
 
     </main>
+
 
     <%- include("partials/footer") %>
 

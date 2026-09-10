@@ -69,9 +69,19 @@
 
             <hr>
 
-            <a href="/apply" class="apply-btn">
-                Apply Now
-            </a>
+           <% if (isLoggedIn) { %>
+
+    <a href="/apply?jobId=<%= job._id %>" class="apply-btn">
+        Apply Now
+    </a>
+
+<% } else { %>
+
+    <a href="/login" class="apply-btn">
+        Login to Apply
+    </a>
+
+<% } %>
 
         </div>
 
