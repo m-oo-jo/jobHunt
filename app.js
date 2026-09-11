@@ -456,6 +456,15 @@ app.get("/recruiter/post", authMiddleware, recruiterMiddleware, (req, res) => {
   res.render("recruiter-post");
 });
 
+app.get(
+  "/recruiter/applications",
+  authMiddleware,
+  recruiterMiddleware,
+  (req, res) => {
+    res.render("recruiter-applications");
+  },
+);
+
 // ====================
 // Application Route
 // ====================
